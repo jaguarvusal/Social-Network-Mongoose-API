@@ -24,6 +24,7 @@ const userSchema = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: 'User',
+        default: [], // Ensure friends is always an array
       },
     ],
   },
@@ -36,7 +37,7 @@ const userSchema = new Schema(
 );
 
 userSchema.virtual('friendCount').get(function () {
-  return this.friends.length;
+  return this.friends?.length || 0; // Safely calculate the length of the friends array
 });
 
 const User = model('User', userSchema);

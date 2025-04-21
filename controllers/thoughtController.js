@@ -51,25 +51,12 @@ module.exports = {
       .catch((err) => res.status(500).json(err));
   },
   removeReaction(req, res) {
-    console.log('Thought ID:', req.params.thoughtId); // Debug log
-    console.log('Reaction ID:', req.body.reactionId); // Debug log
-
     Thought.findByIdAndUpdate(
       req.params.thoughtId,
-      { $pull: { reactions: { reactionId: req.body.reactionId } } }, // Match reactionId from the body
+      { $pull: { reactions: { reactionId: req.params.reactionId } } }, // Use req.params.reactionId
       { new: true }
     )
-      .then((thought) => {
-        if (!thought) {
-          console.log('Thought not found'); // Debug log
-          return res.status(404).json({ message: 'Thought not found' });
-        }
-        console.log('Updated Thought:', thought); // Debug log
-        res.json({ message: 'Reaction deleted successfully', thought });
-      })
-      .catch((err) => {
-        console.error(err); // Debug log
-        res.status(500).json(err);
-      });
+      .then((thought) => thought ? res.json(thought) : res.status(404).json({ message: 'Thought not found' }))
+      .catch((err) => res.status(500).json(err));
   },
 };
