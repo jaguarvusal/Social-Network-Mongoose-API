@@ -12,15 +12,23 @@ module.exports = {
       .catch((err) => res.status(500).json(err));
   },
   createThought(req, res) {
-    Thought.create(req.body)
-      .then((thought) => {
-        return User.findByIdAndUpdate(
-          req.body.userId,
-          { $push: { thoughts: thought._id } },
-          { new: true }
-        );
+    const userId = req.body.userId || req.body.userID; // Fallback for case mismatch
+    User.findOne({ _id: userId, username: req.body.username }) // Match both userId and username
+      .then((user) => {
+        if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+        return Thought.create({ ...req.body, userId: user._id }) // Create thought
+          .then((thought) => {
+            return User.findByIdAndUpdate(
+              user._id,
+              { $push: { thoughts: thought._id } },
+              { new: true }
+            );
+          })
+          .then((updatedUser) => res.json(updatedUser))
+          .catch((err) => res.status(500).json(err));
       })
-      .then((user) => user ? res.json(user) : res.status(404).json({ message: 'User not found' }))
       .catch((err) => res.status(500).json(err));
   },
   updateThought(req, res) {
@@ -43,12 +51,25 @@ module.exports = {
       .catch((err) => res.status(500).json(err));
   },
   removeReaction(req, res) {
+    console.log('Thought ID:', req.params.thoughtId); // Debug log
+    console.log('Reaction ID:', req.body.reactionId); // Debug log
+
     Thought.findByIdAndUpdate(
       req.params.thoughtId,
-      { $pull: { reactions: { reactionId: req.body.reactionId } } },
+      { $pull: { reactions: { reactionId: req.body.reactionId } } }, // Match reactionId from the body
       { new: true }
     )
-      .then((thought) => thought ? res.json(thought) : res.status(404).json({ message: 'Thought not found' }))
-      .catch((err) => res.status(500).json(err));
+      .then((thought) => {
+        if (!thought) {
+          console.log('Thought not found'); // Debug log
+          return res.status(404).json({ message: 'Thought not found' });
+        }
+        console.log('Updated Thought:', thought); // Debug log
+        res.json({ message: 'Reaction deleted successfully', thought });
+      })
+      .catch((err) => {
+        console.error(err); // Debug log
+        res.status(500).json(err);
+      });
   },
 };

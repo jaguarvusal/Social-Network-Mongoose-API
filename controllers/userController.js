@@ -10,8 +10,11 @@ module.exports = {
   },
   getUserById(req, res) {
     User.findById(req.params.userId)
-      .populate('thoughts')
-      .populate('friends')
+      .populate({
+        path: 'thoughts',
+        select: 'thoughtText', // Include only the thoughtText field
+      })
+      .populate('friends', 'username') // Populate friends with their usernames
       .then((user) => user ? res.json(user) : res.status(404).json({ message: 'User not found' }))
       .catch((err) => res.status(500).json(err));
   },
@@ -40,6 +43,7 @@ module.exports = {
       { $addToSet: { friends: req.params.friendId } },
       { new: true }
     )
+      .populate('friends', 'username') // Populate friends with their usernames
       .then((user) => user ? res.json(user) : res.status(404).json({ message: 'User not found' }))
       .catch((err) => res.status(500).json(err));
   },
